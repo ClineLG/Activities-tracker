@@ -24,6 +24,7 @@
     "crypto-js": "^4.2.0",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
+    "mailersend": "^2.3.0",
     "mongoose": "^8.9.6",
     "uid2": "^1.0.0"
   }

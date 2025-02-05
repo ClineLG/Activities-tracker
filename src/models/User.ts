@@ -9,7 +9,7 @@ const activitySchema = new mongoose.Schema({
 });
 
 const UserSchema = new mongoose.Schema({
-  account: { username: { type: String, required: true }, avatar: Object },
+  username: { type: String, required: true },
   token: String,
   email: String,
   hash: { type: String, select: false },
