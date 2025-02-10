@@ -12,8 +12,8 @@ const UserSchema = new mongoose.Schema({
   username: { type: String, required: true },
   token: String,
   email: String,
-  hash: { type: String, select: false },
-  salt: { type: String, select: false },
+  hash: { type: String },
+  salt: { type: String },
   Actitvities: [activitySchema],
 });
 

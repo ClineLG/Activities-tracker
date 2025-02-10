@@ -49,13 +49,13 @@ router.post("/signup", async (req: Request, res: Response) => {
 
 router.post("/login", async (req, res) => {
   try {
-    const { userEmail, userPassword } = req.body;
+    const { email, password } = req.body;
 
-    if (!userPassword && !userEmail) {
+    if (!password && !email) {
       return res.status(404).json({ error: "details needed" });
     }
 
-    const userDetails = await UserModel.findOne({ email: userEmail });
+    const userDetails = await UserModel.findOne({ email: email });
 
     if (!userDetails) {
       return res.status(404).json({ error: "Email address unknown" });
@@ -65,7 +65,7 @@ router.post("/login", async (req, res) => {
     const tokenUser = userDetails.token;
     const hashUser = userDetails.hash;
 
-    const tryHashUser = SHA256(userPassword + saltUser).toString(encBase64);
+    const tryHashUser = SHA256(password + saltUser).toString(encBase64);
 
     if (tryHashUser !== hashUser) {
       return res.status(404).json({ error: "Wrong password" });
@@ -73,7 +73,7 @@ router.post("/login", async (req, res) => {
 
     res.status(201).json({
       id: userDetails.id,
-      token: userDetails.token,
+      token: tokenUser,
       username: userDetails.username,
     });
   } catch (error) {
@@ -132,13 +132,16 @@ router.put("/reset-password", async (req, res) => {
     const { email, password } = req.body;
 
     if (!email || !password) {
-      return res.status(400).json({ message: "Email et mot de passe requis." });
+      return res.status(400).json({ message: "details needed." });
     }
     const user = await UserModel.findOne({ email: email });
+    console.log("old", user, user.hash);
+
     const salt = user.salt;
     const newHash = SHA256(password + salt).toString(encBase64);
     user.hash = newHash;
     await user.save();
+    console.log("new", user, user.hash);
 
     return res
       .status(200)
@@ -161,11 +164,10 @@ router.post("/send-email", async (req, res) => {
 
     const userToSendEmail = await UserModel.findOne({ email: email });
 
-    const userName = userToSendEmail.username;
-
     if (!userToSendEmail) {
       return res.status(401).json({ message: "unknown email" });
     }
+    const userName = userToSendEmail.username;
 
     const secretCode = uid2(6);
 
@@ -175,20 +177,20 @@ router.post("/send-email", async (req, res) => {
       .setFrom(sentFrom)
       .setTo(recipients)
       .setReplyTo(sentFrom)
-      .setSubject(`Renouvellement de mot de passe  -Activity Tracker-`)
+      .setSubject(`Renouvellement de mot de passe  -TimeTrackR-`)
       .setHtml(
         `Bonjour ${userName},<br />   Pour réinitialiser votre mot de passe,<br /> veuillez entrer le code écrit ci-dessous, sur la page de renouvellement de mot de passe de Activity-Tracker  :<br />` +
           "<strong>" +
           secretCode +
           "</strong>" +
-          "<br />  <br /> A bientôt ! <br />  <br /> La Team Activity Tracker"
+          "<br />  <br /> A bientôt ! <br />  <br /> La Team TimeTrackR"
       )
       .setText(
         "Bonjour" +
           userName +
-          ", pour réinitialiser votre mot de passe, veuillez entrer le code secret écrit ci-dessous, sur la page de renouvellement de mot de passe de Activity-Tracker  :" +
+          ", pour réinitialiser votre mot de passe, veuillez entrer le code secret écrit ci-dessous, sur la page de renouvellement de mot de passe de TimeTrackR  :" +
           secretCode +
-          "A bientôt ! La Team Activity Tracker"
+          "A bientôt ! La Team TimeTrackR"
       );
 
     const result = await mailersend.email.send(emailParams);
@@ -198,6 +200,19 @@ router.post("/send-email", async (req, res) => {
       secretCode: secretCode,
       email: userToSendEmail.email,
     });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json(error);
+  }
+});
+
+router.get("/details", isAuthenticated, async (req, res) => {
+  try {
+    const user = await UserModel.findById(req.body.user).select(
+      "token username _id"
+    );
+    console.log("DETAILS", user);
+    res.status(200).json(user);
   } catch (error) {
     console.log(error);
     res.status(500).json(error);
