@@ -1,11 +1,25 @@
+import express from "express";
 import { UserModel } from "../models/User";
 import isAuthenticated from "../../middleware/isAuthenticated";
 import totalHours from "../utils/totalHours";
-import express from "express";
 import weekOfYear from "../utils/weekOfYear";
-import { Week, Day, Year, Activity } from "../types/activityTypes";
+import { Week, Day } from "../types/activityTypes";
 
 const router = express.Router();
+
+router.get("/all", isAuthenticated, async (req, res) => {
+  try {
+    const userA = await UserModel.findById(req.body.user._id);
+    const activitiesName = userA.Actitvities.filter(
+      (a) => a.actual === true
+    ).map((e) => e.name);
+    res.status(200).json(activitiesName);
+    res;
+  } catch (error) {
+    console.log(error);
+    res.status(500).json(error);
+  }
+});
 
 router.get("/dayly", isAuthenticated, async (req, res) => {
   try {
