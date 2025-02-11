@@ -55,7 +55,7 @@ router.post("/start", isAuthenticated_1.default, async (req, res) => {
         }
         activity.markModified("activityByYear");
         await userConcerned.save();
-        res.status(200).json(userConcerned);
+        res.status(200).json({ message: "start" });
     }
     catch (error) {
         res.status(500).json(error);
@@ -134,6 +134,24 @@ router.post("/stop", isAuthenticated_1.default, async (req, res) => {
         res.status(200).json(userConcerned);
     }
     catch (error) {
+        res.status(500).json(error);
+    }
+});
+router.post("/delete", isAuthenticated_1.default, async (req, res) => {
+    try {
+        const { id, user } = req.body;
+        console.log(id);
+        const userConcerned = await User_1.UserModel.findById(user._id);
+        const activity = userConcerned.Actitvities.filter((e) => e._id.toString() === id)[0];
+        console.log(activity);
+        activity.actual = false;
+        console.log(activity.actual);
+        activity.markModified("actual");
+        await userConcerned.save();
+        res.status(200).json({ message: "activity deleted" });
+    }
+    catch (error) {
+        console.log(error);
         res.status(500).json(error);
     }
 });
