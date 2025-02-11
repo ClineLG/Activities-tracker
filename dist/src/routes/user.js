@@ -32,11 +32,7 @@ router.post("/signup", async (req, res) => {
             salt: salt,
         });
         await newUser.save();
-        res.status(201).json({
-            id: newUser.id,
-            token: token,
-            username: newUser.username,
-        });
+        res.status(201).json(token);
     }
     catch (error) {
         console.log(error.message);
@@ -60,11 +56,7 @@ router.post("/login", async (req, res) => {
         if (tryHashUser !== hashUser) {
             return res.status(404).json({ error: "Wrong password" });
         }
-        res.status(201).json({
-            id: userDetails.id,
-            token: tokenUser,
-            username: userDetails.username,
-        });
+        res.status(201).json(tokenUser);
     }
     catch (error) {
         console.log(error.message);
@@ -93,11 +85,7 @@ router.put("/update", isAuthenticated_1.default, async (req, res) => {
             }
         }
         await user.save();
-        res.status(201).json({
-            _id: user._id,
-            token: user.token,
-            username: user.username,
-        });
+        res.status(201).json(user.token);
     }
     catch (error) {
         console.log(error);
@@ -127,9 +115,7 @@ router.put("/reset-password", async (req, res) => {
         user.hash = newHash;
         await user.save();
         console.log("new", user, user.hash);
-        return res
-            .status(200)
-            .json({ id: user._id, token: user.token, username: user.username });
+        return res.status(200).json(user.token);
     }
     catch (error) {
         console.error(error);
@@ -177,16 +163,17 @@ router.post("/send-email", async (req, res) => {
         res.status(500).json(error);
     }
 });
-router.get("/details", isAuthenticated_1.default, async (req, res) => {
-    try {
-        const user = await User_1.UserModel.findById(req.body.user).select("token username _id");
-        console.log("DETAILS", user);
-        res.status(200).json(user);
-    }
-    catch (error) {
-        console.log(error);
-        res.status(500).json(error);
-    }
-});
+// router.get("/details", isAuthenticated, async (req, res) => {
+//   try {
+//     const user = await UserModel.findById(req.body.user).select(
+//       "token username _id"
+//     );
+//     console.log("DETAILS", user);
+//     res.status(200).json(user);
+//   } catch (error) {
+//     console.log(error);
+//     res.status(500).json(error);
+//   }
+// });
 module.exports = router;
 //# sourceMappingURL=user.js.map

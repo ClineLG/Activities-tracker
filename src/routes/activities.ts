@@ -12,7 +12,13 @@ router.get("/all", isAuthenticated, async (req, res) => {
     const userA = await UserModel.findById(req.body.user._id);
     const activitiesName = userA.Actitvities.filter(
       (a) => a.actual === true
-    ).map((e) => e.name);
+    ).map((e) => {
+      const obj = {
+        name: e.name,
+        id: e._id,
+      };
+      return obj;
+    });
     res.status(200).json(activitiesName);
     res;
   } catch (error) {
