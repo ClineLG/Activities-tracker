@@ -12,7 +12,13 @@ const router = express_1.default.Router();
 router.get("/all", isAuthenticated_1.default, async (req, res) => {
     try {
         const userA = await User_1.UserModel.findById(req.body.user._id);
-        const activitiesName = userA.Actitvities.filter((a) => a.actual === true).map((e) => e.name);
+        const activitiesName = userA.Actitvities.filter((a) => a.actual === true).map((e) => {
+            const obj = {
+                name: e.name,
+                id: e._id,
+            };
+            return obj;
+        });
         res.status(200).json(activitiesName);
         res;
     }
