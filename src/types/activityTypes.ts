@@ -1,36 +1,41 @@
 type Day = {
   day: number;
-  total: number;
-  start: number;
-  end: number;
+  total: [{ name: string; time: number; id: string }];
 };
 
 type Week = {
   week: number;
   month: number;
-  total: number;
+  total: [{ name: string; time: number; id: string }];
   days: Day[];
 };
 
 type Year = {
-  total: number;
+  total: [{ name: string; time: number; id: string }];
   weeks: Week[];
 };
 
-type Activity = {
+type activitySchema = {
   name: string;
   actual: boolean;
-  activityByYear: { [key: number]: Year }[];
 };
 
-// type User = {
-//   _id: string;
-//   account: { username: string; avatar: object };
-//   token: string;
-//   email: string;
-//   hash: string;
-//   salt: string;
-//   Actitvities: Activity[];
-// };
+type User = {
+  username: { type: String; required: true };
+  token: String;
+  email: String;
+  hash: { type: String };
+  salt: { type: String };
+  ActitvitiesNameAndStatus: [activitySchema];
+  ActivitiesByYear: { [key: string]: Year };
 
-export { Week, Day, Year, Activity };
+  pending: {
+    id: String;
+    year: Number;
+    week: Number;
+    day: Number;
+    time: Number;
+  }[];
+};
+
+export { Week, Day, Year, activitySchema, User };

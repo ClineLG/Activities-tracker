@@ -9,16 +9,17 @@ const calculateToMinutes_1 = __importDefault(require("../utils/calculateToMinute
 const createYearData_1 = __importDefault(require("../utils/createYearData"));
 const express_1 = __importDefault(require("express"));
 const weekOfYear_1 = __importDefault(require("../utils/weekOfYear"));
+// import { Week, Day, Year, User } from "../types/activityTypes";
+const addTimeTotalActivity_1 = require("../utils/addTimeTotalActivity");
 const router = express_1.default.Router();
 router.post("/create", isAuthenticated_1.default, async (req, res) => {
     try {
         const { name, user } = req.body;
         const userConcerned = await User_1.UserModel.findById(user._id).select("-hash,-salt");
         const year = new Date().getFullYear();
-        userConcerned.Actitvities.push({
+        userConcerned.ActitvitiesNameAndStatus.push({
             name: name,
             actual: true,
-            activityByYear: [(0, createYearData_1.default)(year)],
         });
         await userConcerned.save();
         res.status(201).json(userConcerned);
@@ -29,33 +30,23 @@ router.post("/create", isAuthenticated_1.default, async (req, res) => {
 });
 router.post("/start", isAuthenticated_1.default, async (req, res) => {
     try {
-        const { name, user } = req.body;
+        console.log("Start");
+        const { id, user } = req.body;
         const userConcerned = await User_1.UserModel.findById(user._id);
-        const activity = userConcerned.Actitvities.filter((e) => e.name === name)[0];
-        if (!activity) {
-            return res.status(400).json({ message: "unknown activity" });
-        }
-        activity.pending.start = Date.now();
+        //
+        //
         const day = new Date().getDay();
         const week = (0, weekOfYear_1.default)(new Date());
         const year = new Date().getFullYear();
-        const byYear = activity.activityByYear.find((yearObj) => yearObj[year]);
-        if (byYear) {
-            const weekObj = byYear[year].weeks.find((e) => e.week === week);
-            const dayObj = weekObj.days.find((d) => d.day === day);
-            dayObj.start = Date.now();
-            console.log("DO", dayObj);
-        }
-        else {
-            activity.activityByYear.push((0, createYearData_1.default)(year));
-            const byYear = activity.activityByYear.find((yearObj) => yearObj[year]);
-            const weekObj = byYear[year].weeks.find((e) => e.week === week);
-            const dayObj = weekObj.days.find((d) => d.day === day);
-            dayObj.start = Date.now();
-        }
-        activity.markModified("activityByYear");
+        userConcerned.pending.push({
+            id: id,
+            year: year,
+            week: week,
+            day: day,
+            time: new Date().getTime(),
+        });
         await userConcerned.save();
-        res.status(200).json({ message: "start" });
+        res.status(200).json(userConcerned.pending);
     }
     catch (error) {
         res.status(500).json(error);
@@ -64,76 +55,34 @@ router.post("/start", isAuthenticated_1.default, async (req, res) => {
 });
 router.post("/stop", isAuthenticated_1.default, async (req, res) => {
     try {
-        const { name, user } = req.body;
+        const { id, name, user } = req.body;
         const userConcerned = await User_1.UserModel.findById(user._id);
-        const activity = userConcerned.Actitvities.filter((e) => e.name === name)[0];
-        if (!activity) {
-            return res.status(400).json({ message: "unknown activity" });
+        const dayNow = new Date().getDay();
+        const weekNow = (0, weekOfYear_1.default)(new Date());
+        const yearNow = new Date().getFullYear();
+        const timeNow = Date.now();
+        const activity = userConcerned.pending.find((e) => e.id === id);
+        const { time, week, day, year } = activity;
+        const rangeTime = (0, calculateToMinutes_1.default)(timeNow, Number(time));
+        const startDate = new Date(Number(time));
+        if (!userConcerned.ActivitiesByYear[startDate.getFullYear()]) {
+            userConcerned.ActivitiesByYear[startDate.getFullYear()] =
+                (0, createYearData_1.default)();
         }
-        activity.pending.end = Date.now();
-        const day = new Date().getDay();
-        const week = (0, weekOfYear_1.default)(new Date());
-        const year = new Date().getFullYear();
-        const byYear = activity.activityByYear.find((yearObj) => yearObj[year]);
-        if (byYear) {
-            const weekObj = byYear[year].weeks.find((e) => e.week === week);
-            const dayObj = weekObj.days.find((d) => d.day === day);
-            if (dayObj.start !== 0) {
-                dayObj.end = Date.now();
-                dayObj.total += (0, calculateToMinutes_1.default)(dayObj.start, dayObj.end);
-                byYear[year].total += (0, calculateToMinutes_1.default)(dayObj.start, dayObj.end);
-                weekObj.total += (0, calculateToMinutes_1.default)(dayObj.start, dayObj.end);
-            }
-            else if (dayObj.start === 0) {
-                //set yesterday counter
-                const yesterday = new Date();
-                yesterday.setDate(yesterday.getDate() - 1);
-                yesterday.setHours(23, 59, 59, 999);
-                const weekObjYesterday = byYear[year].weeks.find((e) => e.week === (0, weekOfYear_1.default)(yesterday));
-                const dayObjYesterday = weekObjYesterday.days.find((d) => d.day === yesterday.getDay());
-                dayObjYesterday.end = yesterday.getTime();
-                dayObjYesterday.total += (0, calculateToMinutes_1.default)(dayObjYesterday.start, dayObjYesterday.end);
-                byYear[year].total += (0, calculateToMinutes_1.default)(dayObjYesterday.start, dayObjYesterday.end);
-                weekObjYesterday.total += (0, calculateToMinutes_1.default)(dayObjYesterday.start, dayObjYesterday.end);
-                // set Today counter
-                dayObj.end = Date.now();
-                const midnightStart = new Date();
-                midnightStart.setHours(0, 0, 0, 0);
-                dayObj.start = midnightStart.getTime();
-                dayObj.total += (0, calculateToMinutes_1.default)(dayObj.start, dayObj.end);
-                byYear[year].total += (0, calculateToMinutes_1.default)(dayObj.start, dayObj.end);
-                weekObj.total += (0, calculateToMinutes_1.default)(dayObj.start, dayObj.end);
-            }
+        if (!userConcerned.ActivitiesByYear[new Date().getFullYear()]) {
+            userConcerned.ActivitiesByYear[startDate.getFullYear()] =
+                (0, createYearData_1.default)();
+        }
+        if (year === yearNow && day === dayNow && week === weekNow) {
+            (0, addTimeTotalActivity_1.addTimeToActivity)(user.id, id, name, rangeTime, startDate);
         }
         else {
-            //create new array for the new year
-            activity.activityByYear.push((0, createYearData_1.default)(year));
-            //set yesterday counter
-            const yesterday = new Date();
-            yesterday.setDate(yesterday.getDate() - 1);
-            yesterday.setHours(23, 59, 59, 999);
-            const weekObjYesterday = byYear[year].weeks.find((e) => e.week === (0, weekOfYear_1.default)(yesterday));
-            const dayObjYesterday = weekObjYesterday.days.find((d) => d.day === yesterday.getDay());
-            dayObjYesterday.end = yesterday.getTime();
-            dayObjYesterday.total += (0, calculateToMinutes_1.default)(dayObjYesterday.start, dayObjYesterday.end);
-            byYear[year].total += (0, calculateToMinutes_1.default)(dayObjYesterday.start, dayObjYesterday.end);
-            weekObjYesterday.total += (0, calculateToMinutes_1.default)(dayObjYesterday.start, dayObjYesterday.end);
-            const weekObj = byYear[year].weeks.find((e) => e.week === week);
-            const dayObj = weekObj.days.find((d) => d.day === day);
-            // set Today counter
-            dayObj.end = Date.now();
-            const midnightStart = new Date();
-            midnightStart.setHours(0, 0, 0, 0);
-            dayObj.start = midnightStart.getTime();
-            dayObj.total += (0, calculateToMinutes_1.default)(dayObj.start, dayObj.end);
-            byYear[year].total += (0, calculateToMinutes_1.default)(dayObj.start, dayObj.end);
-            weekObj.total += (0, calculateToMinutes_1.default)(dayObj.start, dayObj.end);
+            (0, addTimeTotalActivity_1.incrementTimeForMultipleDays)(startDate, new Date(), user.id, id, name, rangeTime);
         }
-        activity.markModified("activityByYear");
-        await userConcerned.save();
         res.status(200).json(userConcerned);
     }
     catch (error) {
+        console.log(error);
         res.status(500).json(error);
     }
 });
@@ -142,11 +91,8 @@ router.post("/delete", isAuthenticated_1.default, async (req, res) => {
         const { id, user } = req.body;
         console.log(id);
         const userConcerned = await User_1.UserModel.findById(user._id);
-        const activity = userConcerned.Actitvities.filter((e) => e._id.toString() === id)[0];
-        console.log(activity);
+        const activity = userConcerned.ActitvitiesNameAndStatus.find((e) => e._id.toString() === id);
         activity.actual = false;
-        console.log(activity.actual);
-        activity.markModified("actual");
         await userConcerned.save();
         res.status(200).json({ message: "activity deleted" });
     }

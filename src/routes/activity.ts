@@ -4,7 +4,11 @@ import calculateMinutes from "../utils/calculateToMinutes";
 import createYearData from "../utils/createYearData";
 import express from "express";
 import weekOfYear from "../utils/weekOfYear";
-import { Week, Day, Year, Activity } from "../types/activityTypes";
+// import { Week, Day, Year, User } from "../types/activityTypes";
+import {
+  addTimeToActivity,
+  incrementTimeForMultipleDays,
+} from "../utils/addTimeTotalActivity";
 
 const router = express.Router();
 
@@ -17,10 +21,9 @@ router.post("/create", isAuthenticated, async (req, res) => {
 
     const year = new Date().getFullYear();
 
-    userConcerned.Actitvities.push({
+    userConcerned.ActitvitiesNameAndStatus.push({
       name: name,
       actual: true,
-      activityByYear: [createYearData(year)],
     });
 
     await userConcerned.save();
@@ -32,43 +35,24 @@ router.post("/create", isAuthenticated, async (req, res) => {
 
 router.post("/start", isAuthenticated, async (req, res) => {
   try {
-    const { name, user } = req.body;
+    console.log("Start");
+    const { id, user } = req.body;
     const userConcerned = await UserModel.findById(user._id);
-
-    const activity = userConcerned.Actitvities.filter(
-      (e) => e.name === name
-    )[0];
-    if (!activity) {
-      return res.status(400).json({ message: "unknown activity" });
-    }
-
-    activity.pending.start = Date.now();
-
+    //
+    //
     const day = new Date().getDay();
     const week = weekOfYear(new Date());
     const year = new Date().getFullYear();
-
-    const byYear = activity.activityByYear.find((yearObj) => yearObj[year]);
-
-    if (byYear) {
-      const weekObj = byYear[year].weeks.find((e: Week) => e.week === week);
-
-      const dayObj = weekObj.days.find((d: Day) => d.day === day);
-      dayObj.start = Date.now();
-      console.log("DO", dayObj);
-    } else {
-      activity.activityByYear.push(createYearData(year));
-
-      const byYear = activity.activityByYear.find((yearObj) => yearObj[year]);
-      const weekObj = byYear[year].weeks.find((e: Week) => e.week === week);
-
-      const dayObj = weekObj.days.find((d: Day) => d.day === day);
-      dayObj.start = Date.now();
-    }
-    activity.markModified("activityByYear");
+    userConcerned.pending.push({
+      id: id,
+      year: year,
+      week: week,
+      day: day,
+      time: new Date().getTime(),
+    });
     await userConcerned.save();
 
-    res.status(200).json({ message: "start" });
+    res.status(200).json(userConcerned.pending);
   } catch (error) {
     res.status(500).json(error);
     console.log(error);
@@ -77,121 +61,45 @@ router.post("/start", isAuthenticated, async (req, res) => {
 
 router.post("/stop", isAuthenticated, async (req, res) => {
   try {
-    const { name, user } = req.body;
+    const { id, name, user } = req.body;
     const userConcerned = await UserModel.findById(user._id);
 
-    const activity = userConcerned.Actitvities.filter(
-      (e) => e.name === name
-    )[0];
+    const dayNow = new Date().getDay();
+    const weekNow = weekOfYear(new Date());
+    const yearNow = new Date().getFullYear();
 
-    if (!activity) {
-      return res.status(400).json({ message: "unknown activity" });
+    const timeNow = Date.now();
+
+    const activity = userConcerned.pending.find((e) => e.id === id);
+
+    const { time, week, day, year } = activity;
+    const rangeTime = calculateMinutes(timeNow, Number(time));
+    const startDate = new Date(Number(time));
+
+    if (!userConcerned.ActivitiesByYear[startDate.getFullYear()]) {
+      userConcerned.ActivitiesByYear[startDate.getFullYear()] =
+        createYearData();
+    }
+    if (!userConcerned.ActivitiesByYear[new Date().getFullYear()]) {
+      userConcerned.ActivitiesByYear[startDate.getFullYear()] =
+        createYearData();
     }
 
-    activity.pending.end = Date.now();
-
-    const day = new Date().getDay();
-    const week = weekOfYear(new Date());
-    const year = new Date().getFullYear();
-
-    const byYear = activity.activityByYear.find((yearObj) => yearObj[year]);
-
-    if (byYear) {
-      const weekObj = byYear[year].weeks.find((e: Week) => e.week === week);
-
-      const dayObj = weekObj.days.find((d: Day) => d.day === day);
-
-      if (dayObj.start !== 0) {
-        dayObj.end = Date.now();
-        dayObj.total += calculateMinutes(dayObj.start, dayObj.end);
-        byYear[year].total += calculateMinutes(dayObj.start, dayObj.end);
-        weekObj.total += calculateMinutes(dayObj.start, dayObj.end);
-      } else if (dayObj.start === 0) {
-        //set yesterday counter
-        const yesterday = new Date();
-        yesterday.setDate(yesterday.getDate() - 1);
-        yesterday.setHours(23, 59, 59, 999);
-
-        const weekObjYesterday = byYear[year].weeks.find(
-          (e: Week) => e.week === weekOfYear(yesterday)
-        );
-        const dayObjYesterday = weekObjYesterday.days.find(
-          (d: Day) => d.day === yesterday.getDay()
-        );
-
-        dayObjYesterday.end = yesterday.getTime();
-        dayObjYesterday.total += calculateMinutes(
-          dayObjYesterday.start,
-          dayObjYesterday.end
-        );
-        byYear[year].total += calculateMinutes(
-          dayObjYesterday.start,
-          dayObjYesterday.end
-        );
-        weekObjYesterday.total += calculateMinutes(
-          dayObjYesterday.start,
-          dayObjYesterday.end
-        );
-
-        // set Today counter
-        dayObj.end = Date.now();
-        const midnightStart = new Date();
-        midnightStart.setHours(0, 0, 0, 0);
-        dayObj.start = midnightStart.getTime();
-        dayObj.total += calculateMinutes(dayObj.start, dayObj.end);
-        byYear[year].total += calculateMinutes(dayObj.start, dayObj.end);
-        weekObj.total += calculateMinutes(dayObj.start, dayObj.end);
-      }
+    if (year === yearNow && day === dayNow && week === weekNow) {
+      addTimeToActivity(user.id, id, name, rangeTime, startDate);
     } else {
-      //create new array for the new year
-
-      activity.activityByYear.push(createYearData(year));
-
-      //set yesterday counter
-      const yesterday = new Date();
-      yesterday.setDate(yesterday.getDate() - 1);
-      yesterday.setHours(23, 59, 59, 999);
-
-      const weekObjYesterday = byYear[year].weeks.find(
-        (e: Week) => e.week === weekOfYear(yesterday)
+      incrementTimeForMultipleDays(
+        startDate,
+        new Date(),
+        user.id,
+        id,
+        name,
+        rangeTime
       );
-      const dayObjYesterday = weekObjYesterday.days.find(
-        (d: Day) => d.day === yesterday.getDay()
-      );
-
-      dayObjYesterday.end = yesterday.getTime();
-      dayObjYesterday.total += calculateMinutes(
-        dayObjYesterday.start,
-        dayObjYesterday.end
-      );
-      byYear[year].total += calculateMinutes(
-        dayObjYesterday.start,
-        dayObjYesterday.end
-      );
-      weekObjYesterday.total += calculateMinutes(
-        dayObjYesterday.start,
-        dayObjYesterday.end
-      );
-
-      const weekObj = byYear[year].weeks.find((e: Week) => e.week === week);
-
-      const dayObj = weekObj.days.find((d: Day) => d.day === day);
-
-      // set Today counter
-      dayObj.end = Date.now();
-      const midnightStart = new Date();
-      midnightStart.setHours(0, 0, 0, 0);
-      dayObj.start = midnightStart.getTime();
-      dayObj.total += calculateMinutes(dayObj.start, dayObj.end);
-      byYear[year].total += calculateMinutes(dayObj.start, dayObj.end);
-      weekObj.total += calculateMinutes(dayObj.start, dayObj.end);
     }
-    activity.markModified("activityByYear");
-
-    await userConcerned.save();
-
     res.status(200).json(userConcerned);
   } catch (error) {
+    console.log(error);
     res.status(500).json(error);
   }
 });
@@ -201,13 +109,10 @@ router.post("/delete", isAuthenticated, async (req, res) => {
     console.log(id);
     const userConcerned = await UserModel.findById(user._id);
 
-    const activity = userConcerned.Actitvities.filter(
+    const activity = userConcerned.ActitvitiesNameAndStatus.find(
       (e) => e._id.toString() === id
-    )[0];
-    console.log(activity);
+    );
     activity.actual = false;
-    console.log(activity.actual);
-    activity.markModified("actual");
     await userConcerned.save();
     res.status(200).json({ message: "activity deleted" });
   } catch (error) {

@@ -5,6 +5,7 @@ import SHA256 from "crypto-js/sha256";
 import isAuthenticated from "../../middleware/isAuthenticated";
 import { MailerSend, Sender, Recipient, EmailParams } from "mailersend";
 import encBase64 from "crypto-js/enc-base64";
+import createYearData from "../utils/createYearData";
 
 const router = express.Router();
 
@@ -20,7 +21,7 @@ router.post("/signup", async (req: Request, res: Response) => {
     if (isEmailExist) {
       return res.status(404).json({ error: "email allready used" });
     }
-
+    const year = new Date().getFullYear();
     const salt = uid2(16);
     const hash = SHA256(password + salt).toString(encBase64);
     const token = uid2(32);
@@ -30,10 +31,13 @@ router.post("/signup", async (req: Request, res: Response) => {
       username: username,
 
       token: token,
-
+      ActivitiesByYear: {},
       hash: hash,
       salt: salt,
     });
+
+    newUser.ActivitiesByYear[year] = createYearData();
+
     await newUser.save();
 
     res.status(201).json(token);
@@ -194,9 +198,7 @@ router.post("/send-email", async (req, res) => {
 
 // router.get("/details", isAuthenticated, async (req, res) => {
 //   try {
-//     const user = await UserModel.findById(req.body.user).select(
-//       "token username _id"
-//     );
+//     const user = await UserModel.findById(req.body.user).select("Actitvities");
 //     console.log("DETAILS", user);
 //     res.status(200).json(user);
 //   } catch (error) {

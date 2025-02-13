@@ -10,6 +10,7 @@ const sha256_1 = __importDefault(require("crypto-js/sha256"));
 const isAuthenticated_1 = __importDefault(require("../../middleware/isAuthenticated"));
 const mailersend_1 = require("mailersend");
 const enc_base64_1 = __importDefault(require("crypto-js/enc-base64"));
+const createYearData_1 = __importDefault(require("../utils/createYearData"));
 const router = express_1.default.Router();
 router.post("/signup", async (req, res) => {
     try {
@@ -21,6 +22,7 @@ router.post("/signup", async (req, res) => {
         if (isEmailExist) {
             return res.status(404).json({ error: "email allready used" });
         }
+        const year = new Date().getFullYear();
         const salt = (0, uid2_1.default)(16);
         const hash = (0, sha256_1.default)(password + salt).toString(enc_base64_1.default);
         const token = (0, uid2_1.default)(32);
@@ -28,9 +30,11 @@ router.post("/signup", async (req, res) => {
             email: email,
             username: username,
             token: token,
+            ActivitiesByYear: {},
             hash: hash,
             salt: salt,
         });
+        newUser.ActivitiesByYear[year] = (0, createYearData_1.default)();
         await newUser.save();
         res.status(201).json(token);
     }
@@ -165,9 +169,7 @@ router.post("/send-email", async (req, res) => {
 });
 // router.get("/details", isAuthenticated, async (req, res) => {
 //   try {
-//     const user = await UserModel.findById(req.body.user).select(
-//       "token username _id"
-//     );
+//     const user = await UserModel.findById(req.body.user).select("Actitvities");
 //     console.log("DETAILS", user);
 //     res.status(200).json(user);
 //   } catch (error) {

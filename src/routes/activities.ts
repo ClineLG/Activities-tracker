@@ -10,17 +10,11 @@ const router = express.Router();
 router.get("/all", isAuthenticated, async (req, res) => {
   try {
     const userA = await UserModel.findById(req.body.user._id);
-    const activitiesName = userA.Actitvities.filter(
+    const activitiesName = userA.ActitvitiesNameAndStatus.filter(
       (a) => a.actual === true
-    ).map((e) => {
-      const obj = {
-        name: e.name,
-        id: e._id,
-      };
-      return obj;
-    });
+    );
+
     res.status(200).json(activitiesName);
-    res;
   } catch (error) {
     console.log(error);
     res.status(500).json(error);
@@ -39,27 +33,9 @@ router.get("/dayly", isAuthenticated, async (req, res) => {
 
     const userA = await UserModel.findById(user._id);
 
-    const activitiesName = [...userA.Actitvities].map((e) => e.name);
-
-    const activitiesToday = [];
-    for (let i = 0; i < activitiesName.length; i++) {
-      const activity = userA.Actitvities.filter(
-        (e) => e.name === activitiesName[i]
-      )[0];
-      const byYear = activity.activityByYear.find((yearObj) => yearObj[year]);
-
-      const weekObj = byYear[year].weeks.find((e: Week) => e.week === week);
-      const dayObj = weekObj.days.find((d: Day) => d.day === day);
-
-      if (dayObj.total > 0) {
-        const obj = {
-          name: activitiesName[i],
-          total: totalHours(dayObj.total),
-        };
-
-        activitiesToday.push(obj);
-      }
-    }
+    const activitiesToday = userA.ActivitiesByYear[year].weeks
+      .find((e: Week) => e.week === week)
+      .days.find((e: Day) => e.day === day).total;
     res.status(200).json(activitiesToday);
   } catch (error) {
     console.log(error);
@@ -74,30 +50,10 @@ router.get("/weekly", isAuthenticated, async (req, res) => {
 
     const userA = await UserModel.findById(user._id);
 
-    const activitiesName = [...userA.Actitvities].map((e) => e.name);
-
-    const activitiesToday = [];
-    for (let i = 0; i < activitiesName.length; i++) {
-      const activity = userA.Actitvities.filter(
-        (e) => e.name === activitiesName[i]
-      )[0];
-      const byYear = activity.activityByYear.find(
-        (yearObj) => yearObj[year as string]
-      );
-
-      const weekObj = byYear[year as string].weeks.find(
-        (e: Week) => e.week === Number(week)
-      );
-
-      if (weekObj.total > 0) {
-        const obj = {
-          name: activitiesName[i],
-          total: totalHours(weekObj.total),
-        };
-        activitiesToday.push(obj);
-      }
-    }
-    res.status(200).json(activitiesToday);
+    const activitiesWeek = userA.ActivitiesByYear[year as string].weeks.find(
+      (e: Week) => e.week === Number(week)
+    ).total;
+    res.status(200).json(activitiesWeek);
   } catch (error) {
     console.log(error);
     res.status(500).json(error);
@@ -111,26 +67,9 @@ router.get("/year", isAuthenticated, async (req, res) => {
 
     const userA = await UserModel.findById(user._id);
 
-    const activitiesName = [...userA.Actitvities].map((e) => e.name);
+    const activitiesYear = userA.ActivitiesByYear[year as string].total;
 
-    const activitiesToday = [];
-    for (let i = 0; i < activitiesName.length; i++) {
-      const activity = userA.Actitvities.filter(
-        (e) => e.name === activitiesName[i]
-      )[0];
-      const byYear = activity.activityByYear.find(
-        (yearObj) => yearObj[year as string]
-      );
-
-      if (byYear[year as string].total > 0) {
-        const obj = {
-          name: activitiesName[i],
-          total: totalHours(byYear[year as string].total),
-        };
-        activitiesToday.push(obj);
-      }
-    }
-    res.status(200).json(activitiesToday);
+    res.status(200).json(activitiesYear);
   } catch (error) {
     console.log(error);
     res.status(500).json(error);
@@ -144,31 +83,11 @@ router.get("/month", isAuthenticated, async (req, res) => {
 
     const userA = await UserModel.findById(user._id);
 
-    const activitiesName = [...userA.Actitvities].map((e) => e.name);
+    const weeksArr = userA.ActivitiesByYear[year as string].weeks;
 
-    const activitiesToday = [];
-    for (let i = 0; i < activitiesName.length; i++) {
-      const activity = userA.Actitvities.filter(
-        (e) => e.name === activitiesName[i]
-      )[0];
+    const totalMonth = weeksArr.filter((e: Week) => e.month === Number(month));
 
-      const byYear = activity.activityByYear.find(
-        (yearObj) => yearObj[year as string]
-      );
-
-      const byMonth = byYear[year as string].weeks
-        .filter((e: Week) => e.month === Number(month))
-        .reduce((a: number, b: Week) => a + b.total, 0);
-
-      if (byMonth > 0) {
-        const obj = {
-          name: activitiesName[i],
-          total: totalHours(byMonth),
-        };
-        activitiesToday.push(obj);
-      }
-    }
-    res.status(200).json(activitiesToday);
+    res.status(200).json(totalMonth);
   } catch (error) {
     console.log(error);
     res.status(500).json(error);
