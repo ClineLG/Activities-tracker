@@ -25,14 +25,14 @@ router.get("/dayly", isAuthenticated, async (req, res) => {
   try {
     const { date } = req.query;
     const { user } = req.body;
-
+    // console.log("Daily Date", date);
     const dateFormat = new Date(date as string);
+    // console.log(dateFormat);
     const year = dateFormat.getFullYear();
     const week = weekOfYear(dateFormat);
     const day = dateFormat.getDay();
 
     const userA = await UserModel.findById(user._id);
-
     const activitiesToday = userA.ActivitiesByYear[year].weeks
       .find((e: Week) => e.week === week)
       .days.find((e: Day) => e.day === day).total;

@@ -23,7 +23,9 @@ router.get("/dayly", isAuthenticated_1.default, async (req, res) => {
     try {
         const { date } = req.query;
         const { user } = req.body;
+        // console.log("Daily Date", date);
         const dateFormat = new Date(date);
+        // console.log(dateFormat);
         const year = dateFormat.getFullYear();
         const week = (0, weekOfYear_1.default)(dateFormat);
         const day = dateFormat.getDay();
