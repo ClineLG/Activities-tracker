@@ -8,6 +8,7 @@ const mongoose_1 = __importDefault(require("mongoose"));
 const activitySchema = new mongoose_1.default.Schema({
     name: String,
     actual: Boolean,
+    pending: Object,
 });
 const UserSchema = new mongoose_1.default.Schema({
     username: String,
@@ -17,9 +18,9 @@ const UserSchema = new mongoose_1.default.Schema({
     salt: { type: String },
     ActitvitiesNameAndStatus: [activitySchema],
     ActivitiesByYear: Object,
-    pending: [
-    // { activityId: String, year: Number, week: Number, day: Number, time: Number },
-    ],
+    // pending: [
+    //   // { activityId: String, year: Number, week: Number, day: Number, time: Number },
+    // ],
 });
 exports.UserModel = mongoose_1.default.model("User", UserSchema);
 //# sourceMappingURL=User.js.map

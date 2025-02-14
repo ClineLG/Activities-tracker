@@ -30,7 +30,6 @@ router.post("/create", isAuthenticated_1.default, async (req, res) => {
 });
 router.post("/start", isAuthenticated_1.default, async (req, res) => {
     try {
-        console.log("Start");
         const { id, user } = req.body;
         const userConcerned = await User_1.UserModel.findById(user._id);
         //
@@ -38,15 +37,15 @@ router.post("/start", isAuthenticated_1.default, async (req, res) => {
         const day = new Date().getDay();
         const week = (0, weekOfYear_1.default)(new Date());
         const year = new Date().getFullYear();
-        userConcerned.pending.push({
-            id: id,
+        const activity = userConcerned.ActitvitiesNameAndStatus.find((e) => e._id.toString() === id);
+        activity.pending = {
             year: year,
             week: week,
             day: day,
             time: new Date().getTime(),
-        });
+        };
         await userConcerned.save();
-        res.status(200).json(userConcerned.pending);
+        res.status(200).json(activity.pending);
     }
     catch (error) {
         res.status(500).json(error);
@@ -61,8 +60,8 @@ router.post("/stop", isAuthenticated_1.default, async (req, res) => {
         const weekNow = (0, weekOfYear_1.default)(new Date());
         const yearNow = new Date().getFullYear();
         const timeNow = Date.now();
-        const activity = userConcerned.pending.find((e) => e.id === id);
-        const { time, week, day, year } = activity;
+        const activity = userConcerned.ActitvitiesNameAndStatus.find((e) => e._id.toString() === id);
+        const { time, week, day, year } = activity.pending;
         const rangeTime = (0, calculateToMinutes_1.default)(timeNow, Number(time));
         const startDate = new Date(Number(time));
         if (!userConcerned.ActivitiesByYear[startDate.getFullYear()]) {
@@ -77,7 +76,7 @@ router.post("/stop", isAuthenticated_1.default, async (req, res) => {
             (0, addTimeTotalActivity_1.addTimeToActivity)(user.id, id, name, rangeTime, startDate);
         }
         else {
-            (0, addTimeTotalActivity_1.incrementTimeForMultipleDays)(startDate, new Date(), user.id, id, name, rangeTime);
+            (0, addTimeTotalActivity_1.incrementTimeForMultipleDays)(startDate, new Date(), user.id, id, name);
         }
         res.status(200).json(userConcerned);
     }
@@ -89,12 +88,30 @@ router.post("/stop", isAuthenticated_1.default, async (req, res) => {
 router.post("/delete", isAuthenticated_1.default, async (req, res) => {
     try {
         const { id, user } = req.body;
-        console.log(id);
         const userConcerned = await User_1.UserModel.findById(user._id);
-        const activity = userConcerned.ActitvitiesNameAndStatus.find((e) => e._id.toString() === id);
+        const activity = userConcerned.ActitvitiesNameAndStatus.find((e) => e.id === id);
         activity.actual = false;
         await userConcerned.save();
         res.status(200).json({ message: "activity deleted" });
+    }
+    catch (error) {
+        console.log(error);
+        res.status(500).json(error);
+    }
+});
+router.post("/addTime", isAuthenticated_1.default, async (req, res) => {
+    try {
+        const { id, date, time, user, name } = req.body;
+        const userConcerned = await User_1.UserModel.findById(user._id);
+        const dateEdit = new Date(date);
+        if (!userConcerned.ActivitiesByYear[dateEdit.getFullYear()]) {
+            userConcerned.ActivitiesByYear[dateEdit.getFullYear()] = (0, createYearData_1.default)();
+            userConcerned.markModified("ActivitiesByYear");
+            await userConcerned.save();
+        }
+        const edit = true;
+        (0, addTimeTotalActivity_1.addTimeToActivity)(user._id, id, name, time, dateEdit, edit);
+        res.status(201).json(userConcerned);
     }
     catch (error) {
         console.log(error);

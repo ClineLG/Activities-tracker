@@ -7,7 +7,7 @@ exports.incrementTimeForMultipleDays = exports.addTimeToActivity = void 0;
 const calculateToMinutes_1 = __importDefault(require("../utils/calculateToMinutes"));
 const weekOfYear_1 = __importDefault(require("../utils/weekOfYear"));
 const User_1 = require("../models/User");
-const addTimeToActivity = async (id, activityId, activityName, timeSpent, date) => {
+const addTimeToActivity = async (id, activityId, activityName, timeSpent, date, edit) => {
     const day = date.getDay();
     const week = (0, weekOfYear_1.default)(date);
     const year = date.getFullYear();
@@ -19,37 +19,37 @@ const addTimeToActivity = async (id, activityId, activityName, timeSpent, date) 
             time: timeSpent,
         });
     }
-    const totalByYear = userConcerned.ActivitiesByYear[year].total.find((e) => e.id === activityId);
-    if (totalByYear) {
-        totalByYear.time += timeSpent;
-    }
     else {
-        userConcerned.ActivitiesByYear[year].total.push({
-            id: activityId,
-            name: activityName,
-            time: timeSpent,
-        });
+        const totalByYear = userConcerned.ActivitiesByYear[year].total.find((e) => e.id === activityId);
+        if (totalByYear) {
+            totalByYear.time += Number(timeSpent);
+        }
+        else {
+            userConcerned.ActivitiesByYear[year].total.push({
+                id: activityId,
+                name: activityName,
+                time: timeSpent,
+            });
+        }
     }
     if (userConcerned.ActivitiesByYear[year].weeks.find((e) => e.week === week).total.length < 1) {
         userConcerned.ActivitiesByYear[year].weeks
             .find((e) => e.week === week)
             .total.push({ id: activityId, name: activityName, time: timeSpent });
     }
-    const totalByWeek = userConcerned.ActivitiesByYear[year].weeks
-        .find((e) => e.week === week)
-        .total.find((e) => e.id === activityId);
-    console.log("yolo", totalByWeek);
-    if (totalByWeek) {
-        totalByWeek.time += timeSpent;
-    }
     else {
-        userConcerned.ActivitiesByYear[year].weeks
+        const totalByWeek = userConcerned.ActivitiesByYear[year].weeks
             .find((e) => e.week === week)
-            .total.push({ id: activityId, name: activityName, time: timeSpent });
+            .total.find((e) => e.id === activityId);
+        if (totalByWeek) {
+            totalByWeek.time += Number(timeSpent);
+        }
+        else {
+            userConcerned.ActivitiesByYear[year].weeks
+                .find((e) => e.week === week)
+                .total.push({ id: activityId, name: activityName, time: timeSpent });
+        }
     }
-    console.log("DAY", day, userConcerned.ActivitiesByYear[year].weeks
-        .find((e) => e.week === week)
-        .days.find((e) => e.day === day));
     if (userConcerned.ActivitiesByYear[year].weeks
         .find((e) => e.week === week)
         .days.find((e) => e.day === day).total.length < 1) {
@@ -58,26 +58,30 @@ const addTimeToActivity = async (id, activityId, activityName, timeSpent, date) 
             .days.find((e) => e.day === day)
             .total.push({ id: activityId, name: activityName, time: timeSpent });
     }
-    const totalByDay = userConcerned.ActivitiesByYear[year].weeks
-        .find((e) => e.week === week)
-        .days.find((e) => e.day === day)
-        .total.find((e) => e.id === activityId);
-    if (totalByDay) {
-        totalByDay.time += timeSpent;
-    }
     else {
-        userConcerned.ActivitiesByYear[year].weeks
+        const totalByDay = userConcerned.ActivitiesByYear[year].weeks
             .find((e) => e.week === week)
             .days.find((e) => e.day === day)
-            .total.push({ id: activityId, name: activityName, time: timeSpent });
+            .total.find((e) => e.id === activityId);
+        if (totalByDay) {
+            totalByDay.time += Number(timeSpent);
+        }
+        else {
+            userConcerned.ActivitiesByYear[year].weeks
+                .find((e) => e.week === week)
+                .days.find((e) => e.day === day)
+                .total.push({ id: activityId, name: activityName, time: timeSpent });
+        }
     }
-    const newPending = userConcerned.pending.filter((e) => e.id !== activityId);
-    userConcerned.pending = newPending;
+    if (!edit) {
+        const newPending = userConcerned.ActitvitiesNameAndStatus.find((e) => e._id.toString() === activityId);
+        newPending.pending = undefined;
+    }
     userConcerned.markModified("ActivitiesByYear");
     await userConcerned.save();
 };
 exports.addTimeToActivity = addTimeToActivity;
-const incrementTimeForMultipleDays = (startDate, endDate, id, activityId, activityName, totalTimeSpent) => {
+const incrementTimeForMultipleDays = (startDate, endDate, id, activityId, activityName) => {
     let firstDayDate = new Date(startDate);
     const endOfFirstDay = new Date(firstDayDate);
     endOfFirstDay.setHours(23, 59, 59, 999);

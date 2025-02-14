@@ -10,9 +10,11 @@ export const addTimeToActivity = async (
   activityId: string,
   activityName: string,
   timeSpent: number,
-  date: Date
+  date: Date,
+  edit?: boolean
 ): Promise<void> => {
   const day = date.getDay();
+
   const week = weekOfYear(date);
   const year = date.getFullYear();
 
@@ -24,18 +26,19 @@ export const addTimeToActivity = async (
       name: activityName,
       time: timeSpent,
     });
-  }
-  const totalByYear = userConcerned.ActivitiesByYear[year].total.find(
-    (e: total) => e.id === activityId
-  );
-  if (totalByYear) {
-    totalByYear.time += timeSpent;
   } else {
-    userConcerned.ActivitiesByYear[year].total.push({
-      id: activityId,
-      name: activityName,
-      time: timeSpent,
-    });
+    const totalByYear = userConcerned.ActivitiesByYear[year].total.find(
+      (e: total) => e.id === activityId
+    );
+    if (totalByYear) {
+      totalByYear.time += Number(timeSpent);
+    } else {
+      userConcerned.ActivitiesByYear[year].total.push({
+        id: activityId,
+        name: activityName,
+        time: timeSpent,
+      });
+    }
   }
 
   if (
@@ -46,27 +49,19 @@ export const addTimeToActivity = async (
     userConcerned.ActivitiesByYear[year].weeks
       .find((e: Week) => e.week === week)
       .total.push({ id: activityId, name: activityName, time: timeSpent });
-  }
-
-  const totalByWeek = userConcerned.ActivitiesByYear[year].weeks
-    .find((e: Week) => e.week === week)
-    .total.find((e: total) => e.id === activityId);
-  console.log("yolo", totalByWeek);
-  if (totalByWeek) {
-    totalByWeek.time += timeSpent;
   } else {
-    userConcerned.ActivitiesByYear[year].weeks
+    const totalByWeek = userConcerned.ActivitiesByYear[year].weeks
       .find((e: Week) => e.week === week)
-      .total.push({ id: activityId, name: activityName, time: timeSpent });
+      .total.find((e: total) => e.id === activityId);
+    if (totalByWeek) {
+      totalByWeek.time += Number(timeSpent);
+    } else {
+      userConcerned.ActivitiesByYear[year].weeks
+        .find((e: Week) => e.week === week)
+        .total.push({ id: activityId, name: activityName, time: timeSpent });
+    }
   }
 
-  console.log(
-    "DAY",
-    day,
-    userConcerned.ActivitiesByYear[year].weeks
-      .find((e: Week) => e.week === week)
-      .days.find((e: Day) => e.day === day)
-  );
   if (
     userConcerned.ActivitiesByYear[year].weeks
       .find((e: Week) => e.week === week)
@@ -76,24 +71,29 @@ export const addTimeToActivity = async (
       .find((e: Week) => e.week === week)
       .days.find((e: Day) => e.day === day)
       .total.push({ id: activityId, name: activityName, time: timeSpent });
-  }
-  const totalByDay = userConcerned.ActivitiesByYear[year].weeks
-    .find((e: Week) => e.week === week)
-    .days.find((e: Day) => e.day === day)
-    .total.find((e: total) => e.id === activityId);
-
-  if (totalByDay) {
-    totalByDay.time += timeSpent;
   } else {
-    userConcerned.ActivitiesByYear[year].weeks
+    const totalByDay = userConcerned.ActivitiesByYear[year].weeks
       .find((e: Week) => e.week === week)
       .days.find((e: Day) => e.day === day)
-      .total.push({ id: activityId, name: activityName, time: timeSpent });
+      .total.find((e: total) => e.id === activityId);
+
+    if (totalByDay) {
+      totalByDay.time += Number(timeSpent);
+    } else {
+      userConcerned.ActivitiesByYear[year].weeks
+        .find((e: Week) => e.week === week)
+        .days.find((e: Day) => e.day === day)
+        .total.push({ id: activityId, name: activityName, time: timeSpent });
+    }
   }
 
-  const newPending = userConcerned.pending.filter((e) => e.id !== activityId);
+  if (!edit) {
+    const newPending = userConcerned.ActitvitiesNameAndStatus.find(
+      (e) => e._id.toString() === activityId
+    );
 
-  userConcerned.pending = newPending;
+    newPending.pending = undefined;
+  }
 
   userConcerned.markModified("ActivitiesByYear");
 
@@ -105,8 +105,7 @@ export const incrementTimeForMultipleDays = (
   endDate: Date,
   id: string,
   activityId: string,
-  activityName: string,
-  totalTimeSpent: Number
+  activityName: string
 ) => {
   let firstDayDate = new Date(startDate);
 
