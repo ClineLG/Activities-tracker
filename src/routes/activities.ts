@@ -21,7 +21,7 @@ router.get("/all", isAuthenticated, async (req, res) => {
   }
 });
 
-router.get("/dayly", isAuthenticated, async (req, res) => {
+router.get("/daily", isAuthenticated, async (req, res) => {
   try {
     const { date } = req.query;
     const { user } = req.body;
@@ -36,6 +36,8 @@ router.get("/dayly", isAuthenticated, async (req, res) => {
     const activitiesToday = userA.ActivitiesByYear[year].weeks
       .find((e: Week) => e.week === week)
       .days.find((e: Day) => e.day === day).total;
+
+    console.log("Acti", activitiesToday);
     res.status(200).json(activitiesToday);
   } catch (error) {
     console.log(error);
@@ -47,12 +49,12 @@ router.get("/weekly", isAuthenticated, async (req, res) => {
   try {
     const { year, week } = req.query;
     const { user } = req.body;
-
     const userA = await UserModel.findById(user._id);
 
     const activitiesWeek = userA.ActivitiesByYear[year as string].weeks.find(
       (e: Week) => e.week === Number(week)
     ).total;
+
     res.status(200).json(activitiesWeek);
   } catch (error) {
     console.log(error);
@@ -86,8 +88,32 @@ router.get("/month", isAuthenticated, async (req, res) => {
     const weeksArr = userA.ActivitiesByYear[year as string].weeks;
 
     const totalMonth = weeksArr.filter((e: Week) => e.month === Number(month));
+    let finalResult = [];
+    {
+      interface Activity {
+        id: string;
+        name: string;
+        time: number;
+      }
 
-    res.status(200).json(totalMonth);
+      interface Accumulator {
+        [key: string]: Activity;
+      }
+
+      const result = totalMonth.reduce((acc: Accumulator, currObj: Week) => {
+        currObj.total.forEach((activity: Activity) => {
+          const { id, time } = activity;
+          if (acc[id]) {
+            acc[id].time += time;
+          } else {
+            acc[id] = { ...activity };
+          }
+        });
+        return acc;
+      }, {} as Accumulator);
+      finalResult = Object.values(result);
+    }
+    res.status(200).json(finalResult);
   } catch (error) {
     console.log(error);
     res.status(500).json(error);

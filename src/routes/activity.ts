@@ -71,7 +71,7 @@ router.post("/stop", isAuthenticated, async (req, res) => {
     const yearNow = new Date().getFullYear();
 
     const timeNow = Date.now();
-
+    console.log("weekNow", weekNow);
     const activity = userConcerned.ActitvitiesNameAndStatus.find(
       (e) => e._id.toString() === id
     );
