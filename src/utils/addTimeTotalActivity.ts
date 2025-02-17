@@ -3,7 +3,7 @@ import calculateMinutes from "../utils/calculateToMinutes";
 import weekOfYear from "../utils/weekOfYear";
 import { UserModel } from "../models/User";
 
-type total = { name: String; time: Number; id: String } | undefined;
+type total = { name: string; time: number; id: string } | undefined;
 
 export const addTimeToActivity = async (
   id: string,
@@ -27,9 +27,13 @@ export const addTimeToActivity = async (
       time: timeSpent,
     });
   } else {
+    console.log(activityId);
+    console.log("TOTAL", userConcerned.ActivitiesByYear[year].total);
+    console.log("year", year);
     const totalByYear = userConcerned.ActivitiesByYear[year].total.find(
       (e: total) => e.id === activityId
-    );
+    ).total;
+
     if (totalByYear) {
       totalByYear.time += Number(timeSpent);
     } else {
