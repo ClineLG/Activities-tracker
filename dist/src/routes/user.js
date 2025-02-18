@@ -96,7 +96,7 @@ router.put("/update", isAuthenticated_1.default, async (req, res) => {
         res.status(500).json(error);
     }
 });
-router.delete("/deleteUser", isAuthenticated_1.default, async (req, res) => {
+router.delete("/delete", isAuthenticated_1.default, async (req, res) => {
     try {
         const userToDelete = await User_1.UserModel.findByIdAndDelete(req.body.user);
         res.status(201).json({ message: "profile deleted" });
@@ -167,15 +167,16 @@ router.post("/send-email", async (req, res) => {
         res.status(500).json(error);
     }
 });
-// router.get("/details", isAuthenticated, async (req, res) => {
-//   try {
-//     const user = await UserModel.findById(req.body.user).select("Actitvities");
-//     console.log("DETAILS", user);
-//     res.status(200).json(user);
-//   } catch (error) {
-//     console.log(error);
-//     res.status(500).json(error);
-//   }
-// });
+router.get("/details", isAuthenticated_1.default, async (req, res) => {
+    try {
+        const user = await User_1.UserModel.findById(req.body.user).select("username email");
+        console.log("DETAILS", user);
+        res.status(200).json(user);
+    }
+    catch (error) {
+        console.log(error);
+        res.status(500).json(error);
+    }
+});
 module.exports = router;
 //# sourceMappingURL=user.js.map
