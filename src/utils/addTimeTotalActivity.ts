@@ -3,7 +3,7 @@ import calculateMinutes from "../utils/calculateToMinutes";
 import weekOfYear from "../utils/weekOfYear";
 import { UserModel } from "../models/User";
 
-type total = { name: string; time: number; id: string } | undefined;
+type Total = { id: string; name: string; time: number } | undefined;
 
 export const addTimeToActivity = async (
   id: string,
@@ -13,7 +13,7 @@ export const addTimeToActivity = async (
   date: Date,
   edit?: boolean
 ): Promise<void> => {
-  const day = date.getDay();
+  const day = date.getDay() + 1;
 
   const week = weekOfYear(date);
   const year = date.getFullYear();
@@ -27,12 +27,13 @@ export const addTimeToActivity = async (
       time: timeSpent,
     });
   } else {
-    console.log(activityId);
-    console.log("TOTAL", userConcerned.ActivitiesByYear[year].total);
-    console.log("year", year);
+    // console.log(activityId);
+    // console.log("TOTAL", userConcerned.ActivitiesByYear[year].total);
+    // console.log("year", year);
+
     const totalByYear = userConcerned.ActivitiesByYear[year].total.find(
-      (e: total) => e.id === activityId
-    ).total;
+      (e: Total) => e.id === activityId
+    );
 
     if (totalByYear) {
       totalByYear.time += Number(timeSpent);
@@ -56,7 +57,7 @@ export const addTimeToActivity = async (
   } else {
     const totalByWeek = userConcerned.ActivitiesByYear[year].weeks
       .find((e: Week) => e.week === week)
-      .total.find((e: total) => e.id === activityId);
+      .total.find((e: Total) => e.id === activityId);
     if (totalByWeek) {
       totalByWeek.time += Number(timeSpent);
     } else {
@@ -79,7 +80,7 @@ export const addTimeToActivity = async (
     const totalByDay = userConcerned.ActivitiesByYear[year].weeks
       .find((e: Week) => e.week === week)
       .days.find((e: Day) => e.day === day)
-      .total.find((e: total) => e.id === activityId);
+      .total.find((e: Total) => e.id === activityId);
 
     if (totalByDay) {
       totalByDay.time += Number(timeSpent);

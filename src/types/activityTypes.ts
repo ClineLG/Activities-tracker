@@ -1,3 +1,5 @@
+import { ObjectId } from "mongoose";
+
 type Day = {
   day: number;
   total: [{ name: string; time: number; id: string }];
@@ -30,12 +32,21 @@ type User = {
   ActivitiesByYear: { [key: string]: Year };
 
   pending: {
-    id: String;
     year: Number;
     week: Number;
     day: Number;
     time: Number;
   }[];
 };
-
-export { Week, Day, Year, activitySchema, User };
+type ActivityType = {
+  _id: ObjectId;
+  name: string;
+  actual: boolean;
+  pending?: { year: number; week: number; day: number; time: number };
+};
+type ActivityTrack = {
+  id: string;
+  name: string;
+  time: number;
+};
+export { Week, Day, Year, activitySchema, User, ActivityTrack, ActivityType };

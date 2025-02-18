@@ -7,6 +7,7 @@ const express_1 = __importDefault(require("express"));
 const User_1 = require("../models/User");
 const isAuthenticated_1 = __importDefault(require("../../middleware/isAuthenticated"));
 const weekOfYear_1 = __importDefault(require("../utils/weekOfYear"));
+const pendingAndActivitiesTrack_1 = __importDefault(require("../utils/pendingAndActivitiesTrack"));
 const router = express_1.default.Router();
 router.get("/all", isAuthenticated_1.default, async (req, res) => {
     try {
@@ -19,21 +20,31 @@ router.get("/all", isAuthenticated_1.default, async (req, res) => {
         res.status(500).json(error);
     }
 });
-router.get("/dayly", isAuthenticated_1.default, async (req, res) => {
+router.get("/daily", isAuthenticated_1.default, async (req, res) => {
     try {
         const { date } = req.query;
         const { user } = req.body;
-        // console.log("Daily Date", date);
         const dateFormat = new Date(date);
-        // console.log(dateFormat);
         const year = dateFormat.getFullYear();
         const week = (0, weekOfYear_1.default)(dateFormat);
-        const day = dateFormat.getDay();
+        const day = dateFormat.getDay() + 1;
         const userA = await User_1.UserModel.findById(user._id);
+        if (!userA.ActivitiesByYear[year]) {
+            return res.status(500).json({ message: "no data" });
+        }
         const activitiesToday = userA.ActivitiesByYear[year].weeks
             .find((e) => e.week === week)
             .days.find((e) => e.day === day).total;
-        res.status(200).json(activitiesToday);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const todayLocal = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate());
+        if (dateFormat.getTime() === todayLocal) {
+            const response = (0, pendingAndActivitiesTrack_1.default)(activitiesToday, userA.ActitvitiesNameAndStatus);
+            return res.status(200).json(response);
+        }
+        else {
+            return res.status(200).json(activitiesToday);
+        }
     }
     catch (error) {
         console.log(error);
@@ -45,8 +56,18 @@ router.get("/weekly", isAuthenticated_1.default, async (req, res) => {
         const { year, week } = req.query;
         const { user } = req.body;
         const userA = await User_1.UserModel.findById(user._id);
+        if (!userA.ActivitiesByYear[year]) {
+            return res.status(500).json({ message: "no data" });
+        }
         const activitiesWeek = userA.ActivitiesByYear[year].weeks.find((e) => e.week === Number(week)).total;
-        res.status(200).json(activitiesWeek);
+        const weekNow = (0, weekOfYear_1.default)(new Date());
+        if (weekNow === Number(week)) {
+            const response = (0, pendingAndActivitiesTrack_1.default)(activitiesWeek, userA.ActitvitiesNameAndStatus);
+            return res.status(200).json(response);
+        }
+        else {
+            return res.status(200).json(activitiesWeek);
+        }
     }
     catch (error) {
         console.log(error);
@@ -58,8 +79,18 @@ router.get("/year", isAuthenticated_1.default, async (req, res) => {
         const { year } = req.query;
         const { user } = req.body;
         const userA = await User_1.UserModel.findById(user._id);
+        if (!userA.ActivitiesByYear[year]) {
+            return res.status(500).json({ message: "no data" });
+        }
         const activitiesYear = userA.ActivitiesByYear[year].total;
-        res.status(200).json(activitiesYear);
+        const yearNow = new Date().getFullYear();
+        if (yearNow === Number(year)) {
+            const response = (0, pendingAndActivitiesTrack_1.default)(activitiesYear, userA.ActitvitiesNameAndStatus);
+            return res.status(200).json(response);
+        }
+        else {
+            return res.status(200).json(activitiesYear);
+        }
     }
     catch (error) {
         console.log(error);
@@ -71,9 +102,34 @@ router.get("/month", isAuthenticated_1.default, async (req, res) => {
         const { year, month } = req.query;
         const { user } = req.body;
         const userA = await User_1.UserModel.findById(user._id);
+        if (!userA.ActivitiesByYear[year]) {
+            return res.status(500).json({ message: "no data" });
+        }
         const weeksArr = userA.ActivitiesByYear[year].weeks;
         const totalMonth = weeksArr.filter((e) => e.month === Number(month));
-        res.status(200).json(totalMonth);
+        let finalResult = [];
+        const result = totalMonth.reduce((acc, currObj) => {
+            currObj.total.forEach((activity) => {
+                const { id, time } = activity;
+                if (acc[id]) {
+                    acc[id].time += time;
+                }
+                else {
+                    acc[id] = { ...activity };
+                }
+            });
+            return acc;
+        }, {});
+        finalResult = Object.values(result);
+        const monthNow = new Date().getMonth() + 1;
+        if (monthNow === Number(month)) {
+            const response = (0, pendingAndActivitiesTrack_1.default)(finalResult, userA.ActitvitiesNameAndStatus);
+            return res.status(200).json(response);
+        }
+        else {
+            return res.status(200).json(finalResult);
+        }
+        // res.status(200).json(finalResult);
     }
     catch (error) {
         console.log(error);

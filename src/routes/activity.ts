@@ -72,6 +72,7 @@ router.post("/stop", isAuthenticated, async (req, res) => {
 
     const timeNow = Date.now();
     console.log("weekNow", weekNow);
+
     const activity = userConcerned.ActitvitiesNameAndStatus.find(
       (e) => e._id.toString() === id
     );
@@ -95,6 +96,9 @@ router.post("/stop", isAuthenticated, async (req, res) => {
     } else {
       incrementTimeForMultipleDays(startDate, new Date(), user.id, id, name);
     }
+
+    //del pending
+
     res.status(200).json(userConcerned);
   } catch (error) {
     console.log(error);

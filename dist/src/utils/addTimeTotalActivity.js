@@ -8,7 +8,7 @@ const calculateToMinutes_1 = __importDefault(require("../utils/calculateToMinute
 const weekOfYear_1 = __importDefault(require("../utils/weekOfYear"));
 const User_1 = require("../models/User");
 const addTimeToActivity = async (id, activityId, activityName, timeSpent, date, edit) => {
-    const day = date.getDay();
+    const day = date.getDay() + 1;
     const week = (0, weekOfYear_1.default)(date);
     const year = date.getFullYear();
     const userConcerned = await User_1.UserModel.findById(id);
@@ -20,6 +20,9 @@ const addTimeToActivity = async (id, activityId, activityName, timeSpent, date, 
         });
     }
     else {
+        // console.log(activityId);
+        // console.log("TOTAL", userConcerned.ActivitiesByYear[year].total);
+        // console.log("year", year);
         const totalByYear = userConcerned.ActivitiesByYear[year].total.find((e) => e.id === activityId);
         if (totalByYear) {
             totalByYear.time += Number(timeSpent);
