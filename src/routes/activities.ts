@@ -6,6 +6,7 @@ import weekOfYear from "../utils/weekOfYear";
 import { Week, Day, ActivityType, ActivityTrack } from "../types/activityTypes";
 import calculateMinutes from "../utils/calculateToMinutes";
 import pendingAndActivitiesTrack from "../utils/pendingAndActivitiesTrack";
+import { RandomMotiv } from "../utils/randomMotiv";
 
 const router = express.Router();
 
@@ -16,7 +17,10 @@ router.get("/all", isAuthenticated, async (req, res) => {
       (a) => a.actual === true
     );
 
-    res.status(200).json(activitiesName);
+    res.status(200).json({
+      user: { name: userA.username, quote: RandomMotiv() },
+      activities: activitiesName,
+    });
   } catch (error) {
     console.log(error);
     res.status(500).json(error);
@@ -30,8 +34,9 @@ router.get("/daily", isAuthenticated, async (req, res) => {
     const dateFormat = new Date(date as string);
     const year = dateFormat.getFullYear();
     const week = weekOfYear(dateFormat);
-    const day = dateFormat.getDay() + 1;
-
+    console.log("dateformat", dateFormat);
+    const day = dateFormat.getDay() === 0 ? 7 : dateFormat.getDay();
+    console.log(day);
     const userA = await UserModel.findById(user._id);
 
     if (!userA.ActivitiesByYear[year]) {
