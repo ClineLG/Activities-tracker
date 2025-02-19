@@ -13,7 +13,7 @@ export const addTimeToActivity = async (
   date: Date,
   edit?: boolean
 ): Promise<void> => {
-  const day = date.getDay() + 1;
+  const day = date.getDay() === 0 ? 7 : date.getDay();
 
   const week = weekOfYear(date);
   const year = date.getFullYear();
@@ -45,7 +45,6 @@ export const addTimeToActivity = async (
       });
     }
   }
-
   if (
     userConcerned.ActivitiesByYear[year].weeks.find(
       (e: Week) => e.week === week
@@ -58,6 +57,7 @@ export const addTimeToActivity = async (
     const totalByWeek = userConcerned.ActivitiesByYear[year].weeks
       .find((e: Week) => e.week === week)
       .total.find((e: Total) => e.id === activityId);
+
     if (totalByWeek) {
       totalByWeek.time += Number(timeSpent);
     } else {
@@ -105,9 +105,8 @@ export const addTimeToActivity = async (
   await userConcerned.save();
 };
 
-export const incrementTimeForMultipleDays = (
+export const incrementTimeForMultipleDays = async (
   startDate: Date,
-  endDate: Date,
   id: string,
   activityId: string,
   activityName: string
@@ -120,30 +119,33 @@ export const incrementTimeForMultipleDays = (
   const firstDayTime = calculateMinutes(endOfFirstDay.getTime(), startDate);
 
   if (firstDayTime > 0) {
-    addTimeToActivity(
+    await addTimeToActivity(
       id,
       activityId,
       activityName,
       firstDayTime,
-      new Date(startDate)
+      firstDayDate
     );
   }
 
   const currentDate = new Date(startDate);
   currentDate.setDate(currentDate.getDate() + 1);
 
-  while (currentDate < endDate) {
-    addTimeToActivity(id, activityId, activityName, 1440, currentDate);
+  const today = new Date();
+  const todayMidnight = new Date(today);
+  todayMidnight.setHours(0, 0, 0, 0);
+
+  while (currentDate < todayMidnight) {
+    await addTimeToActivity(id, activityId, activityName, 1440, currentDate);
 
     currentDate.setDate(currentDate.getDate() + 1);
   }
 
   const lastDayTime = calculateMinutes(
-    endDate,
-    new Date(endDate.setHours(0, 0, 0, 0)).getTime()
+    today.getTime(),
+    todayMidnight.getTime()
   );
-
   if (lastDayTime > 0) {
-    addTimeToActivity(id, activityId, activityName, lastDayTime, endDate);
+    await addTimeToActivity(id, activityId, activityName, lastDayTime, today);
   }
 };

@@ -4,11 +4,17 @@ const weekOfYear = (date: Date) => {
   startOfYear.setHours(0, 0, 0, 0);
   const dayOfWeek = startOfYear.getDay();
 
-  const diffToFirstThursday = dayOfWeek <= 4 ? 4 - dayOfWeek : 11 - dayOfWeek;
+  // const diffToFirstThursday = dayOfWeek <= 4 ? 4 - dayOfWeek : 11 - dayOfWeek;
 
-  const firstThursday = new Date(startOfYear);
-  firstThursday.setDate(startOfYear.getDate() + diffToFirstThursday);
-  const diffInMs = date.getTime() - firstThursday.getTime();
+  const diffToFirstMonday = dayOfWeek === 0 ? 1 : (1 - dayOfWeek + 7) % 7;
+
+  // const firstThursday = new Date(startOfYear);
+  //firstThursday.setDate(startOfYear.getDate() + diffToFirstThursday);
+
+  const firstMonday = new Date(startOfYear);
+  firstMonday.setDate(startOfYear.getDate() + diffToFirstMonday);
+
+  const diffInMs = date.getTime() - firstMonday.getTime();
 
   const weekNumber = Math.floor(diffInMs / (7 * 24 * 60 * 60 * 1000)) + 1;
 

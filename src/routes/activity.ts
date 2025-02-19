@@ -71,7 +71,7 @@ router.post("/stop", isAuthenticated, async (req, res) => {
     const yearNow = new Date().getFullYear();
 
     const timeNow = Date.now();
-    console.log("weekNow", weekNow);
+    // console.log("weekNow", weekNow);
 
     const activity = userConcerned.ActitvitiesNameAndStatus.find(
       (e) => e._id.toString() === id
@@ -92,9 +92,11 @@ router.post("/stop", isAuthenticated, async (req, res) => {
     }
 
     if (year === yearNow && day === dayNow && week === weekNow) {
+      console.log("here", year, yearNow, day, dayNow, week, weekNow);
       addTimeToActivity(user.id, id, name, rangeTime, startDate);
     } else {
-      incrementTimeForMultipleDays(startDate, new Date(), user.id, id, name);
+      console.log("there multiple");
+      incrementTimeForMultipleDays(startDate, user.id, id, name);
     }
 
     //del pending
