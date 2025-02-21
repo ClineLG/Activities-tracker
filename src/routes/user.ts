@@ -14,12 +14,12 @@ router.post("/signup", async (req: Request, res: Response) => {
     const { username, password, email } = req.body;
 
     if (!email || !password || !username) {
-      return res.status(404).json({ error: "Parameters missing" });
+      return res.status(400).json({ message: "Parameters missing" });
     }
 
     const isEmailExist = await UserModel.findOne({ email: email });
     if (isEmailExist) {
-      return res.status(404).json({ error: "email allready used" });
+      return res.status(400).json({ message: "email allready used" });
     }
     const year = new Date().getFullYear();
     const salt = uid2(16);
@@ -42,8 +42,7 @@ router.post("/signup", async (req: Request, res: Response) => {
 
     res.status(201).json(token);
   } catch (error) {
-    console.log(error.message);
-    res.status(500).json({ error: error.message });
+    res.status(500).json(error);
   }
 });
 
@@ -52,13 +51,13 @@ router.post("/login", async (req, res) => {
     const { email, password } = req.body;
 
     if (!password && !email) {
-      return res.status(404).json({ error: "details needed" });
+      return res.status(400).json({ message: "details needed" });
     }
 
     const userDetails = await UserModel.findOne({ email: email });
 
     if (!userDetails) {
-      return res.status(404).json({ error: "Email address unknown" });
+      return res.status(404).json({ message: "Email address unknown" });
     }
 
     const saltUser = userDetails.salt;
@@ -68,13 +67,13 @@ router.post("/login", async (req, res) => {
     const tryHashUser = SHA256(password + saltUser).toString(encBase64);
 
     if (tryHashUser !== hashUser) {
-      return res.status(404).json({ error: "Wrong password" });
+      return res.status(400).json({ message: "Wrong password" });
     }
 
     res.status(201).json(tokenUser);
   } catch (error) {
     console.log(error.message);
-    res.status(500).json({ error: error.message });
+    res.status(500).json(error);
   }
 });
 
@@ -127,18 +126,17 @@ router.put("/reset-password", async (req, res) => {
       return res.status(400).json({ message: "details needed." });
     }
     const user = await UserModel.findOne({ email: email });
-    console.log("old", user, user.hash);
 
     const salt = user.salt;
     const newHash = SHA256(password + salt).toString(encBase64);
     user.hash = newHash;
     await user.save();
-    console.log("new", user, user.hash);
+    // console.log("new", user, user.hash);
 
     return res.status(200).json(user.token);
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ message: "Erreur interne du serveur." });
+    return res.status(500).json(error);
   }
 });
 
@@ -167,20 +165,20 @@ router.post("/send-email", async (req, res) => {
       .setFrom(sentFrom)
       .setTo(recipients)
       .setReplyTo(sentFrom)
-      .setSubject(`Renouvellement de mot de passe  -TimeTrackR-`)
+      .setSubject(`Password Reset - TimeTrackR`)
       .setHtml(
-        `Bonjour ${userName},<br />   Pour réinitialiser votre mot de passe,<br /> veuillez entrer le code écrit ci-dessous, sur la page de renouvellement de mot de passe de Activity-Tracker  :<br />` +
+        `Hello ${userName},<br /> To reset your password,<br /> please enter the code below on the password reset page of Activity-Tracker:<br />` +
           "<strong>" +
           secretCode +
           "</strong>" +
-          "<br />  <br /> A bientôt ! <br />  <br /> La Team TimeTrackR"
+          "<br />  <br /> See you soon! <br />  <br /> The TimeTrackR Team"
       )
       .setText(
-        "Bonjour" +
+        "Hello " +
           userName +
-          ", pour réinitialiser votre mot de passe, veuillez entrer le code secret écrit ci-dessous, sur la page de renouvellement de mot de passe de TimeTrackR  :" +
+          ", to reset your password, please enter the secret code below on the password reset page of TimeTrackR:" +
           secretCode +
-          "A bientôt ! La Team TimeTrackR"
+          "See you soon! The TimeTrackR Team"
       );
 
     const result = await mailersend.email.send(emailParams);
@@ -201,6 +199,7 @@ router.get("/details", isAuthenticated, async (req, res) => {
     const user = await UserModel.findById(req.body.user).select(
       "username email"
     );
+
     console.log("DETAILS", user);
     res.status(200).json(user);
   } catch (error) {

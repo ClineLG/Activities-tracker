@@ -61,7 +61,7 @@ router.get("/daily", isAuthenticated, async (req, res) => {
         activitiesToday,
         userA.ActitvitiesNameAndStatus as unknown as ActivityType[]
       );
-
+      console.log("hereIampending>>>>>response");
       return res.status(200).json(response);
     } else {
       return res.status(200).json(activitiesToday);
