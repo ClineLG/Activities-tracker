@@ -60,7 +60,7 @@ router.post("/stop", isAuthenticated_1.default, async (req, res) => {
         const weekNow = (0, weekOfYear_1.default)(new Date());
         const yearNow = new Date().getFullYear();
         const timeNow = Date.now();
-        console.log("weekNow", weekNow);
+        // console.log("weekNow", weekNow);
         const activity = userConcerned.ActitvitiesNameAndStatus.find((e) => e._id.toString() === id);
         const { time, week, day, year } = activity.pending;
         const rangeTime = (0, calculateToMinutes_1.default)(timeNow, Number(time));
@@ -74,10 +74,12 @@ router.post("/stop", isAuthenticated_1.default, async (req, res) => {
                 (0, createYearData_1.default)();
         }
         if (year === yearNow && day === dayNow && week === weekNow) {
+            console.log("here", year, yearNow, day, dayNow, week, weekNow);
             (0, addTimeTotalActivity_1.addTimeToActivity)(user.id, id, name, rangeTime, startDate);
         }
         else {
-            (0, addTimeTotalActivity_1.incrementTimeForMultipleDays)(startDate, new Date(), user.id, id, name);
+            console.log("there multiple");
+            (0, addTimeTotalActivity_1.incrementTimeForMultipleDays)(startDate, user.id, id, name);
         }
         //del pending
         res.status(200).json(userConcerned);
