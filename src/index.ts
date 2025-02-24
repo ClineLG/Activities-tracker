@@ -10,7 +10,25 @@ require("dotenv").config();
 
 app.use(express.json());
 
-mongoose.connect(process.env.MONGODB_URI);
+mongoose.set("debug", true);
+
+const connectToMongoDB = async () => {
+  try {
+    console.log("Attempting to connect to MongoDB...", {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+      poolSize: 5,
+      serverSelectionTimeoutMS: 5000,
+    });
+    await mongoose.connect(process.env.MONGODB_URI);
+    console.log("Connected to MongoDB 🚀");
+  } catch (error) {
+    console.error("Error connecting to MongoDB:", error.message || error);
+    process.exit(1);
+  }
+};
+
+connectToMongoDB();
 
 const userRoutes = require("./routes/user");
 app.use("/user", userRoutes);
@@ -26,5 +44,5 @@ app.get("/", (req, res) => {
 });
 
 app.listen(process.env.PORT, () => {
-  console.log("server Started");
+  console.log("server Started 🚀");
 });
