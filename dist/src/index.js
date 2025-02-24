@@ -1,7 +1,9 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
+var __importDefault =
+  (this && this.__importDefault) ||
+  function (mod) {
+    return mod && mod.__esModule ? mod : { default: mod };
+  };
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
@@ -18,9 +20,9 @@ app.use("/activity", activityRoutes);
 const activitiesRoute = require("./routes/activities");
 app.use("/activities", activitiesRoute);
 app.get("/", (req, res) => {
-    res.status(201).json("welcom on the app");
+  res.status(201).json("welcom on the app");
 });
 app.listen(process.env.PORT, () => {
-    console.log("server Started");
+  console.log("server Started 🚀");
 });
 //# sourceMappingURL=index.js.map
