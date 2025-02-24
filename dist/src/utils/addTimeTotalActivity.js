@@ -8,7 +8,7 @@ const calculateToMinutes_1 = __importDefault(require("../utils/calculateToMinute
 const weekOfYear_1 = __importDefault(require("../utils/weekOfYear"));
 const User_1 = require("../models/User");
 const addTimeToActivity = async (id, activityId, activityName, timeSpent, date, edit) => {
-    const day = date.getDay() + 1;
+    const day = date.getDay() === 0 ? 7 : date.getDay();
     const week = (0, weekOfYear_1.default)(date);
     const year = date.getFullYear();
     const userConcerned = await User_1.UserModel.findById(id);
@@ -84,23 +84,26 @@ const addTimeToActivity = async (id, activityId, activityName, timeSpent, date, 
     await userConcerned.save();
 };
 exports.addTimeToActivity = addTimeToActivity;
-const incrementTimeForMultipleDays = (startDate, endDate, id, activityId, activityName) => {
+const incrementTimeForMultipleDays = async (startDate, id, activityId, activityName) => {
     let firstDayDate = new Date(startDate);
     const endOfFirstDay = new Date(firstDayDate);
     endOfFirstDay.setHours(23, 59, 59, 999);
     const firstDayTime = (0, calculateToMinutes_1.default)(endOfFirstDay.getTime(), startDate);
     if (firstDayTime > 0) {
-        (0, exports.addTimeToActivity)(id, activityId, activityName, firstDayTime, new Date(startDate));
+        await (0, exports.addTimeToActivity)(id, activityId, activityName, firstDayTime, firstDayDate);
     }
     const currentDate = new Date(startDate);
     currentDate.setDate(currentDate.getDate() + 1);
-    while (currentDate < endDate) {
-        (0, exports.addTimeToActivity)(id, activityId, activityName, 1440, currentDate);
+    const today = new Date();
+    const todayMidnight = new Date(today);
+    todayMidnight.setHours(0, 0, 0, 0);
+    while (currentDate < todayMidnight) {
+        await (0, exports.addTimeToActivity)(id, activityId, activityName, 1440, currentDate);
         currentDate.setDate(currentDate.getDate() + 1);
     }
-    const lastDayTime = (0, calculateToMinutes_1.default)(endDate, new Date(endDate.setHours(0, 0, 0, 0)).getTime());
+    const lastDayTime = (0, calculateToMinutes_1.default)(today.getTime(), todayMidnight.getTime());
     if (lastDayTime > 0) {
-        (0, exports.addTimeToActivity)(id, activityId, activityName, lastDayTime, endDate);
+        await (0, exports.addTimeToActivity)(id, activityId, activityName, lastDayTime, today);
     }
 };
 exports.incrementTimeForMultipleDays = incrementTimeForMultipleDays;

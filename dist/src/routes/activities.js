@@ -8,12 +8,16 @@ const User_1 = require("../models/User");
 const isAuthenticated_1 = __importDefault(require("../../middleware/isAuthenticated"));
 const weekOfYear_1 = __importDefault(require("../utils/weekOfYear"));
 const pendingAndActivitiesTrack_1 = __importDefault(require("../utils/pendingAndActivitiesTrack"));
+const randomMotiv_1 = require("../utils/randomMotiv");
 const router = express_1.default.Router();
 router.get("/all", isAuthenticated_1.default, async (req, res) => {
     try {
         const userA = await User_1.UserModel.findById(req.body.user._id);
         const activitiesName = userA.ActitvitiesNameAndStatus.filter((a) => a.actual === true);
-        res.status(200).json(activitiesName);
+        res.status(200).json({
+            user: { name: userA.username, quote: (0, randomMotiv_1.RandomMotiv)() },
+            activities: activitiesName,
+        });
     }
     catch (error) {
         console.log(error);
@@ -27,7 +31,9 @@ router.get("/daily", isAuthenticated_1.default, async (req, res) => {
         const dateFormat = new Date(date);
         const year = dateFormat.getFullYear();
         const week = (0, weekOfYear_1.default)(dateFormat);
-        const day = dateFormat.getDay() + 1;
+        console.log("dateformat", dateFormat);
+        const day = dateFormat.getDay() === 0 ? 7 : dateFormat.getDay();
+        console.log(day);
         const userA = await User_1.UserModel.findById(user._id);
         if (!userA.ActivitiesByYear[year]) {
             return res.status(500).json({ message: "no data" });
@@ -40,6 +46,7 @@ router.get("/daily", isAuthenticated_1.default, async (req, res) => {
         const todayLocal = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate());
         if (dateFormat.getTime() === todayLocal) {
             const response = (0, pendingAndActivitiesTrack_1.default)(activitiesToday, userA.ActitvitiesNameAndStatus);
+            console.log("hereIampending>>>>>response");
             return res.status(200).json(response);
         }
         else {

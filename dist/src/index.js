@@ -20,7 +20,7 @@ app.use("/activities", activitiesRoute);
 app.get("/", (req, res) => {
     res.status(201).json("welcom on the app");
 });
-app.listen(3000, () => {
+app.listen(process.env.PORT, () => {
     console.log("server Started");
 });
 //# sourceMappingURL=index.js.map
