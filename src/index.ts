@@ -12,6 +12,19 @@ app.use(express.json());
 
 mongoose.connect(process.env.MONGODB_URI);
 
+const connectToMongoDB = async () => {
+  try {
+    console.log("Attempting to connect to MongoDB...");
+    await mongoose.connect(process.env.MONGODB_URI);
+    console.log("Connected to MongoDB 🚀");
+  } catch (error) {
+    console.error("Error connecting to MongoDB:", error.message || error);
+    process.exit(1);
+  }
+};
+
+connectToMongoDB();
+
 const userRoutes = require("./routes/user");
 app.use("/user", userRoutes);
 
