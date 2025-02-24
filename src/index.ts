@@ -10,8 +10,6 @@ require("dotenv").config();
 
 app.use(express.json());
 
-mongoose.connect(process.env.MONGODB_URI);
-
 const connectToMongoDB = async () => {
   try {
     console.log("Attempting to connect to MongoDB...");
